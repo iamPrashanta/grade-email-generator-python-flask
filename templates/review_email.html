@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📧 Review Generated Email</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .email-preview {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            white-space: pre-wrap;
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            border-left: 4px solid #007bff;
+            font-size: 15px;
+        }
+        .student-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #2196f3;
+        }
+        .student-info h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .info-item {
+            background: rgba(255,255,255,0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .button-group {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .btn {
+            padding: 15px 30px;
+            margin: 0 10px 10px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-accept {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .btn-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        .btn-regenerate {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #212529;
+        }
+        .btn-regenerate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .grades-display {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Review Generated Email</h1>
+
+        <div class="student-info">
+            <h3>📋 Student Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>👨‍🎓 Student:</strong> {{ data.student_name }}
+                </div>
+                <div class="info-item">
+                    <strong>👨‍👩‍👧 Parent:</strong> {{ data.parent_name }}
+                </div>
+                <div class="info-item">
+                    <strong>📧 Email:</strong> {{ data.parent_email }}
+                </div>
+                <div class="info-item grades-display">
+                    <strong>📊 Grades:</strong>
+                    {% for subject, grade in data.grades.items() %}
+                        {{ subject }}: {{ grade }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <h3>📝 Generated Email Content</h3>
+        <div class="email-preview">{{ data.email_content }}</div>
+
+        <div class="button-group">
+            <form method="POST" action="{{ url_for('send_final_email') }}" style="display: inline;">
+                <button type="submit" class="btn btn-accept"
+                        onclick="return confirm('✅ Send this email to {{ data.parent_email }}?')">
+                    ✅ Accept & Send Email
+                </button>
+            </form>
+
+            <form method="POST" action="{{ url_for('regenerate_email') }}" style="display: inline;">
+                <button type="submit" class="btn btn-regenerate">
+                    🔄 Regenerate Email
+                </button>
+            </form>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

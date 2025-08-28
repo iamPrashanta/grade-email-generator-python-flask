@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI Grade Email Generator</title>
+<style>
+  /* Basic modal styling */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    padding-top: 60px;
+    left: 0; top: 0; width: 100%; height: 100%;
+    overflow: auto; background-color: rgb(0,0,0,0.4);
+  }
+  .modal-content {
+    background: white; margin: auto; padding: 20px; border-radius: 8px; max-width: 600px;
+    box-shadow: 0 5px 15px rgba(0,0,0,.5);
+  }
+  .close {
+    float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+  }
+  .category { margin-top: 10px; }
+  .subjects-list { margin-left: 20px; }
+</style>
+</head>
+<body>
+
+<h1>AI Grade Email Generator</h1>
+
+<button id="openModalBtn">Select Subjects</button>
+
+<!-- Your main form -->
+<form action="{{ url_for('generate_email') }}" method="POST" id="mainForm">
+  <input type="text" name="student_name" placeholder="Student Name" required /><br/><br/>
+  <input type="text" name="parent_name" placeholder="Parent Name" required /><br/><br/>
+  <input type="email" name="parent_email" placeholder="Parent Email" required /><br/><br/>
+
+  <label for="grades">Selected Subjects and Marks (format: Subject:Mark,...):</label><br/>
+  <textarea id="gradesField" name="grades" rows="4" style="width:100%;" required></textarea><br/><br/>
+
+  <button type="submit">Generate Email</button>
+</form>
+
+<!-- The Modal -->
+<div id="subjectsModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeModalBtn">&times;</span>
+    <h2>Select Subjects</h2>
+    <input type="text" id="searchInput" placeholder="Search subjects or categories..." oninput="filterSubjects()" style="width:100%; padding: 8px; margin-bottom: 15px;" />
+    <div id="categoriesContainer"></div>
+    <button onclick="addSelectedSubjects()">Add Selected Subjects</button>
+  </div>
+</div>
+
+<script>
+  const data = {
+    "Natural Sciences": ["Physics", "Chemistry", "Biology", "Mathematics", "Statistics", "Environmental Science", "Earth Science", "Astronomy", "Meteorology"],
+    "Computer Science & IT": ["Computer Science", "Software Engineering", "Data Science", "Artificial Intelligence (AI)", "Machine Learning", "Cybersecurity", "Information Technology", "Web Development", "Cloud Computing", "Blockchain Technology"],
+    "Engineering & Technology": ["Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Electronics Engineering", "Chemical Engineering", "Aerospace Engineering", "Biomedical Engineering", "Robotics", "Mechatronics", "Industrial Engineering", "Environmental Engineering", "Marine Engineering"],
+    "Medical & Health Sciences": ["Medicine (MBBS)", "Nursing", "Dentistry", "Pharmacy", "Physiotherapy", "Radiology", "Public Health", "Nutrition & Dietetics", "Veterinary Science", "Psychology (Clinical)", "Biomedical Sciences"],
+    "Business & Management": ["Business Administration (BBA/MBA)", "Finance", "Accounting", "Marketing", "Human Resource Management (HRM)", "Operations Management", "Entrepreneurship", "International Business", "Supply Chain Management"],
+    "Social Sciences": ["Sociology", "Political Science", "Economics", "Anthropology", "History", "International Relations", "Social Work", "Development Studies"],
+    "Humanities & Arts": ["Literature (English, French, etc.)", "Linguistics", "Philosophy", "Music", "Fine Arts", "Performing Arts (Dance, Theatre)", "History of Art", "Cultural Studies"],
+    "Law & Legal Studies": ["Criminal Law", "Corporate Law", "Constitutional Law", "Intellectual Property Law", "International Law"],
+    "Education": ["Primary Education", "Secondary Education", "Special Education", "Educational Technology", "Curriculum & Instruction"],
+    "Agriculture & Allied Sciences": ["Agriculture", "Horticulture", "Forestry", "Animal Husbandry", "Fisheries Science", "Agronomy"],
+    "Architecture & Design": ["Architecture", "Interior Design", "Urban Planning", "Graphic Design", "Fashion Design", "Product Design"],
+    "Media & Communication": ["Journalism", "Mass Communication", "Digital Media", "Film Studies", "Advertising & PR"],
+    "Emerging & Interdisciplinary Fields": ["Biotechnology", "Nanotechnology", "Renewable Energy", "Data Analytics", "Cognitive Science", "Bioinformatics", "Forensic Science", "Space Science"]
+  };
+
+  // Modal open/close
+  const modal = document.getElementById('subjectsModal');
+  document.getElementById('openModalBtn').onclick = () => modal.style.display = 'block';
+  document.getElementById('closeModalBtn').onclick = () => modal.style.display = 'none';
+  window.onclick = event => { if (event.target === modal) modal.style.display = 'none'; }
+
+  const categoriesContainer = document.getElementById('categoriesContainer');
+
+  function createCheckbox(id, value, labelText) {
+    const container = document.createElement('div');
+    container.style.marginBottom = '5px';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = id;
+    checkbox.value = value;
+
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = labelText;
+    label.style.marginLeft = '8px';
+
+    container.appendChild(checkbox);
+    container.appendChild(label);
+    return container;
+  }
+
+  function buildCategoryList() {
+    categoriesContainer.innerHTML = '';
+    Object.entries(data).forEach(([category, subjects]) => {
+      const catDiv = document.createElement('div');
+      catDiv.className = 'category';
+
+      const catHeader = document.createElement('h3');
+      catHeader.textContent = category;
+      catDiv.appendChild(catHeader);
+
+      const subjectsDiv = document.createElement('div');
+      subjectsDiv.className = 'subjects-list';
+
+      subjects.forEach((subject, idx) => {
+        const checkboxId = `chk_${category.replace(/\s/g, '_')}_${idx}`;
+        const cb = createCheckbox(checkboxId, subject, subject);
+        subjectsDiv.appendChild(cb);
+      });
+
+      catDiv.appendChild(subjectsDiv);
+      categoriesContainer.appendChild(catDiv);
+    });
+  }
+
+  function filterSubjects() {
+    const filter = document.getElementById('searchInput').value.toLowerCase();
+    const categories = document.querySelectorAll('#categoriesContainer .category');
+
+    categories.forEach(category => {
+      let visibleCategory = false;
+      const catName = category.querySelector('h3').textContent.toLowerCase();
+      const subjectDivs = category.querySelectorAll('.subjects-list div, .subjects-list > div');
+
+      category.querySelectorAll('input[type=checkbox]').forEach(cb => {
+        const label = cb.nextSibling.textContent.toLowerCase();
+        const subjectVisible = label.includes(filter) || catName.includes(filter);
+        cb.parentElement.style.display = subjectVisible ? '' : 'none';
+        if(subjectVisible) visibleCategory = true;
+      });
+
+      category.style.display = visibleCategory ? '' : 'none';
+    });
+  }
+
+  function addSelectedSubjects() {
+    const checked = categoriesContainer.querySelectorAll('input[type=checkbox]:checked');
+    if (checked.length == 0) {
+      alert('Please select at least one subject.');
+      return;
+    }
+
+    const gradesField = document.getElementById('gradesField');
+    let currentGrades = gradesField.value.trim();
+    let gradesMap = {};
+
+    if (currentGrades.length > 0) {
+      currentGrades.split(',').forEach(item => {
+        let [subj, mark] = item.split(':').map(s => s.trim());
+        if(subj) gradesMap[subj] = mark || '0';
+      });
+    }
+    checked.forEach(cb => {
+      if (!(cb.value in gradesMap)) {
+        gradesMap[cb.value] = '0';
+      }
+      cb.checked = false;
+    });
+    gradesField.value = Object.entries(gradesMap).map(([subj, mark]) => `${subj}: ${mark}`).join(', ');
+
+    modal.style.display = 'none';
+  }
+
+  window.onload = buildCategoryList;
+</script>
+
+</body>
+</html>
