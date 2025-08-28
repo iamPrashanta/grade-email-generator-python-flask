@@ -1,21 +1,29 @@
+"""
+This script is a quick test to verify that your Google Gemini API key is working.
+It sends a simple prompt to the Gemini model and prints the response.
+"""
+
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
 load_dotenv()
+api_key = os.environ.get("GOOGLE_API_KEY")
+if not api_key:
+    raise ValueError("❌ GOOGLE_API_KEY is missing! Please add it to your .env file.")
 
-# Configure Google Generative AI client with your API key
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-
-# Create a generative model instance for Gemini 1.5 flash
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
+# Test prompt
 prompt_text = "Write a short poem about a rainy day."
 
+print("✅ Testing Gemini API key...\n")
 try:
-    # Generate content from Gemini model
     response = model.generate_content(prompt_text)
-    print("Generated Text:\n", response.text)
+    if response and hasattr(response, 'text'):
+        print("✅ Gemini API is working!\n")
+        print("Generated Response:\n", response.text)
+    else:
+        print("⚠️ No response text returned from the API.")
 except Exception as e:
-    print(f"An error occurred: {e}")
+    print(f"❌ An error occurred while testing the API key:\n{e}")
