@@ -29,7 +29,8 @@ def generate_email_content(student_name, parent_name, grades_dict):
     prompt = (
         f"Write a warm, professional email to {parent_name} about their child {student_name}'s academic performance.\n"
         f"Grades: {grades_str}\n"
-        f"If this child got Grades zero in any subject then write 'tumse na ho paiga'."
+        f"Congratulate on good performance and encourage further improvement.\n"
+        f"Keep the tone positive and respectful."
     )
 
     try:
